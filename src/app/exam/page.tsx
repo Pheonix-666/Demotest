@@ -68,7 +68,7 @@ export default function ExamPage() {
   const pdfDocRef = useRef<any>(null);
   const totalRef = useRef(0);
   const thumbsRef = useRef<HTMLDivElement>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Sync refs
   useEffect(() => { annRef.current = ann; }, [ann]);
