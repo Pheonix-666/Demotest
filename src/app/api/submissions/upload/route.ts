@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveSubmission } from '@/lib/store';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { saveSubmission, uploadSubmissionFile } from '@/lib/store';
 import { randomUUID } from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -19,20 +17,21 @@ export async function POST(req: NextRequest) {
 
     const id = randomUUID();
     const safeName = `submission-${studentId}-${examId}-${Date.now()}.pdf`;
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'submissions');
-    await mkdir(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, safeName);
+    
+    // Read submission file data and upload to Supabase submissions bucket
     const bytes = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(bytes));
+    const buffer = Buffer.from(bytes);
+    const storagePath = await uploadSubmissionFile(safeName, buffer, file.type);
 
-    saveSubmission({
+    // Save submission record to database
+    await saveSubmission({
       id,
       examId,
       examTitle,
       studentName,
       studentId,
       fileName: safeName,
-      filePath: `/uploads/submissions/${safeName}`,
+      filePath: storagePath,
       submittedAt: new Date().toISOString(),
       fileSize: bytes.byteLength,
     });

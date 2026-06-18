@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveExam } from '@/lib/store';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { saveExam, uploadExamFile } from '@/lib/store';
 import { randomUUID } from 'crypto';
-
-export const config = { api: { bodyParser: false } };
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,18 +20,19 @@ export async function POST(req: NextRequest) {
     const id = randomUUID();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileName = `${id}-${safeName}`;
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'exams');
-    await mkdir(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, fileName);
+    
+    // Read file data and upload to Supabase storage bucket
     const bytes = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(bytes));
+    const buffer = Buffer.from(bytes);
+    const storagePath = await uploadExamFile(fileName, buffer, file.type);
 
-    saveExam({
+    // Save exam record to Supabase database
+    await saveExam({
       id,
       title,
       description,
       fileName: file.name,
-      filePath: `/uploads/exams/${fileName}`,
+      filePath: storagePath,
       uploadedAt: new Date().toISOString(),
       deadline: deadline || undefined,
       isActive: true,
