@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string || '';
-    const deadline = formData.get('deadline') as string || '';
+    const deadlineRaw = formData.get('deadline') as string || '';
+    // datetime-local gives "YYYY-MM-DDTHH:mm" with no timezone.
+    // new Date() treats it as LOCAL time — convert to UTC ISO so comparisons are correct.
+    const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : '';
 
     if (!file || !title) {
       return NextResponse.json({ error: 'File and title are required.' }, { status: 400 });

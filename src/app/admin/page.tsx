@@ -257,7 +257,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--muted)' }}>{ex.fileName}</td>
                         <td style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(ex.uploadedAt).toLocaleDateString()}</td>
-                        <td style={{ fontSize: 12, color: 'var(--muted)' }}>{ex.deadline ? new Date(ex.deadline).toLocaleString() : '—'}</td>
+                        <td style={{ fontSize: 12, color: 'var(--muted)' }}>{ex.deadline ? new Date(ex.deadline).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '—'}</td>
                         <td>
                           <span className={`badge ${ex.isActive ? 'badge-success' : 'badge-muted'}`}>{ex.isActive ? 'Active' : 'Inactive'}</span>
                         </td>
@@ -323,6 +323,19 @@ function UploadTab({ onUploaded }: { onUploaded: () => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [deadline, setDeadline] = useState('');
+
+  // Convert a UTC ISO string (from DB) to "YYYY-MM-DDTHH:mm" for datetime-local input
+  function toDatetimeLocal(isoStr: string) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // Current datetime in datetime-local format (for min attribute)
+  function nowDatetimeLocal() {
+    return toDatetimeLocal(new Date().toISOString());
+  }
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -339,7 +352,8 @@ function UploadTab({ onUploaded }: { onUploaded: () => void }) {
     formData.append('file', file);
     formData.append('title', title.trim());
     formData.append('description', description.trim());
-    if (deadline) formData.append('deadline', deadline);
+    // Convert datetime-local ("YYYY-MM-DDTHH:mm") → UTC ISO string before sending
+    if (deadline) formData.append('deadline', new Date(deadline).toISOString());
     try {
       setProgress(40);
       const res = await fetch('/api/exams/upload', { method: 'POST', body: formData });
@@ -376,7 +390,17 @@ function UploadTab({ onUploaded }: { onUploaded: () => void }) {
           </div>
           <div className="form-group">
             <label className="label">Deadline (optional)</label>
-            <input className="input" type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} id="exam-deadline" />
+            <input
+              className="input"
+              type="datetime-local"
+              value={deadline}
+              min={nowDatetimeLocal()}
+              onChange={e => setDeadline(e.target.value)}
+              id="exam-deadline"
+            />
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+              Time is in your local timezone. Students cannot submit after this time.
+            </p>
           </div>
           <div className="form-group">
             <label className="label">PDF File *</label>

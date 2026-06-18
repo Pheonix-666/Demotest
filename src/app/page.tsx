@@ -187,7 +187,7 @@ export default function HomePage() {
                             <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--muted)', flexWrap: 'wrap' }}>
                               {exam.deadline && (
                                 <span style={{ color: isExpired ? 'var(--danger)' : 'var(--muted)' }}>
-                                  ⏰ {isExpired ? 'Expired' : 'Due'}: {new Date(exam.deadline).toLocaleString()}
+                                  ⏰ {isExpired ? 'Expired' : 'Due'}: {new Date(exam.deadline).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} IST
                                 </span>
                               )}
                               <span>📄 {exam.fileName}</span>
