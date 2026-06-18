@@ -92,9 +92,18 @@ export default function ExamPage() {
     const id = sessionStorage.getItem('student_id');
     const exam = sessionStorage.getItem('selected_exam');
     if (!name || !id || !exam) { router.replace('/'); return; }
+    
+    const parsedExam = JSON.parse(exam);
+    const isExpired = parsedExam.deadline ? new Date(parsedExam.deadline) < new Date() : false;
+    if (isExpired) {
+      sessionStorage.removeItem('selected_exam');
+      router.replace('/');
+      return;
+    }
+
     setStudentName(name);
     setStudentId(id);
-    setExamInfo(JSON.parse(exam));
+    setExamInfo(parsedExam);
 
     // Load PDF.js and jsPDF
     const loadScript = (src: string) => new Promise<void>((res, rej) => {

@@ -102,7 +102,26 @@ export async function getExams(): Promise<Exam[]> {
     console.error('Error fetching exams:', error);
     return [];
   }
-  return (data || []).map(mapExamFromDb);
+  const now = new Date();
+  const exams = (data || []).map(mapExamFromDb);
+
+  // Auto-deactivate any exam whose deadline has passed but is still marked active
+  const expiredIds = exams
+    .filter(e => e.isActive && e.deadline && new Date(e.deadline) < now)
+    .map(e => e.id);
+
+  if (expiredIds.length > 0) {
+    await supabase
+      .from('exams')
+      .update({ is_active: false })
+      .in('id', expiredIds);
+    // Reflect the change in the returned list
+    exams.forEach(e => {
+      if (expiredIds.includes(e.id)) e.isActive = false;
+    });
+  }
+
+  return exams;
 }
 
 export async function saveExam(exam: Exam): Promise<void> {

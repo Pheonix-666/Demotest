@@ -154,35 +154,54 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {exams.map(exam => (
-                    <button
-                      key={exam.id}
-                      onClick={() => handleSelectExam(exam)}
-                      style={{
-                        background: 'var(--surface)', border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-lg)', padding: '20px 24px',
-                        textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
-                        width: '100%', color: 'inherit', fontFamily: 'inherit'
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--glow)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
-                      id={`exam-${exam.id}`}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text)', marginBottom: '4px' }}>{exam.title}</div>
-                          {exam.description && <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '8px' }}>{exam.description}</div>}
-                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--muted)', flexWrap: 'wrap' }}>
-                            {exam.deadline && (
-                              <span>⏰ Due: {new Date(exam.deadline).toLocaleString()}</span>
-                            )}
-                            <span>📄 {exam.fileName}</span>
+                  {exams.map(exam => {
+                    const isExpired = exam.deadline ? new Date(exam.deadline) < new Date() : false;
+                    return (
+                      <button
+                        key={exam.id}
+                        onClick={() => !isExpired && handleSelectExam(exam)}
+                        disabled={isExpired}
+                        style={{
+                          background: isExpired ? 'var(--surface2)' : 'var(--surface)', border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-lg)', padding: '20px 24px',
+                          textAlign: 'left', cursor: isExpired ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                          width: '100%', color: 'inherit', fontFamily: 'inherit',
+                          opacity: isExpired ? 0.65 : 1
+                        }}
+                        onMouseEnter={e => {
+                          if (isExpired) return;
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)';
+                          (e.currentTarget as HTMLElement).style.boxShadow = 'var(--glow)';
+                        }}
+                        onMouseLeave={e => {
+                          if (isExpired) return;
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                          (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                        }}
+                        id={`exam-${exam.id}`}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: '16px', color: isExpired ? 'var(--muted)' : 'var(--text)', marginBottom: '4px' }}>{exam.title}</div>
+                            {exam.description && <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '8px' }}>{exam.description}</div>}
+                            <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--muted)', flexWrap: 'wrap' }}>
+                              {exam.deadline && (
+                                <span style={{ color: isExpired ? 'var(--danger)' : 'var(--muted)' }}>
+                                  ⏰ {isExpired ? 'Expired' : 'Due'}: {new Date(exam.deadline).toLocaleString()}
+                                </span>
+                              )}
+                              <span>📄 {exam.fileName}</span>
+                            </div>
                           </div>
+                          {isExpired ? (
+                            <span className="badge badge-danger">Expired</span>
+                          ) : (
+                            <span className="badge badge-success">Active</span>
+                          )}
                         </div>
-                        <span className="badge badge-success">Active</span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

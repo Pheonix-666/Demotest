@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveSubmission, uploadSubmissionFile } from '@/lib/store';
+import { saveSubmission, uploadSubmissionFile, getExams } from '@/lib/store';
 import { randomUUID } from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -13,6 +13,16 @@ export async function POST(req: NextRequest) {
 
     if (!file || !examId || !studentName || !studentId) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    }
+
+    // Verify exam deadline
+    const exams = await getExams();
+    const exam = exams.find(e => e.id === examId);
+    if (!exam) {
+      return NextResponse.json({ error: 'Exam not found.' }, { status: 404 });
+    }
+    if (exam.deadline && new Date(exam.deadline) < new Date()) {
+      return NextResponse.json({ error: 'The deadline for this exam has passed. Submissions are closed.' }, { status: 403 });
     }
 
     const id = randomUUID();
